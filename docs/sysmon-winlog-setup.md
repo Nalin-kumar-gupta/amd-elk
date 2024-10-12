@@ -8,7 +8,8 @@
   C:\
    ├── Program Files\
    │    └── Winlogbeat\
-   └── sysmon.xml
+   ├── Tools\
+   │    └── Sysmon\
   ```
 
 ---
