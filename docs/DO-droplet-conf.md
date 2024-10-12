@@ -82,6 +82,9 @@ sudo apt install git
 ```bash
 git --version
 ```
-
+### Step 3: Verify Git installation
+```bash
+git clone https://github.com/Nalin-kumar-gupta/amd-elk.git
+```
 ---
 ```
