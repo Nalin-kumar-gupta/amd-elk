@@ -1,0 +1,15 @@
+[
+    {
+      "id": 1,
+      "name": "Machine A",
+      "status": "Active",
+      "riskLevel": 45
+    },
+    {
+      "id": 2,
+      "name": "Machine B",
+      "status": "Inactive",
+      "riskLevel": 75
+    }
+  ]
+  
