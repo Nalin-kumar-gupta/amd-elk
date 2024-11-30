@@ -1,0 +1,14 @@
+[
+  {
+    "log_id": 1,
+    "message": "System started.",
+    "risk": 10,
+    "time": "12:00 PM"
+  },
+  {
+    "log_id": 2,
+    "message": "Suspicious activity detected.",
+    "risk": 50,
+    "time": "12:30 PM"
+  }
+]
