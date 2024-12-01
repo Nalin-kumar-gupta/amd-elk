@@ -3,7 +3,7 @@ services:
   elasticsearch:
     image: elasticsearch:7.9.1
     platform: linux/amd64
-    container_name: elasticsearch
+    container_name: amd_elasticsearch
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -24,7 +24,7 @@ services:
   logstash:
     image: logstash:7.9.1
     platform: linux/amd64
-    container_name: logstash
+    container_name: amd_logstash
     ports:
       - "5044:5044"
       - "9600:9600"
@@ -41,7 +41,7 @@ services:
   kibana:
     image: kibana:7.9.1
     platform: linux/amd64
-    container_name: kibana
+    container_name: amd_kibana
     ports:
       - "5601:5601"
     volumes:
@@ -51,6 +51,75 @@ services:
       - elk
     depends_on:
       - elasticsearch
+
+  web:
+    build:
+      context: .
+      dockerfile: ./django-config/Dockerfile
+    image: amd_django
+    container_name: amd_django
+    command: /start.sh
+    volumes:
+      - .:/app
+    ports:
+      - 8000:8000
+    env_file:
+      - ./.env/.local/.django
+    depends_on:
+      - redis
+      - elasticsearch
+
+  redis:
+    image: redis:7-alpine
+    container_name: amd_redis
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: ./django-config/Dockerfile
+    image: amd_celery_worker
+    container_name: amd_celery_worker
+    command: /start-celeryworker.sh
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env/.local/.celery
+    depends_on:
+      - redis
+      - elasticsearch
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: ./django-config/Dockerfile
+    image: amd_celery_beat
+    container_name: amd_celery_beat
+    command: /start-celerybeat.sh
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env/.local/.beat
+    depends_on:
+      - redis
+      - elasticsearch
+
+  flower:
+    build:
+      context: .
+      dockerfile: ./django-config/Dockerfile
+    image: amd_celery_flower
+    container_name: amd_flower
+    command: /start-flower.sh
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env/.local/.flower
+    ports:
+      - 5557:5555
+    depends_on:
+      - redis
+      - elasticsearch
+
 
 networks:
   elk:
