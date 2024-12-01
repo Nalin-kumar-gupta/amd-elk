@@ -39,7 +39,7 @@ class ApiService {
   Future<List<dynamic>> fetchLogs(String machineId) async {
     try {
       // Append machineId to the endpoint
-      final response = await getService('/logs/');
+      final response = await getService('/logs/$machineId/');
 
       // Validate and process the response
       if (response.containsKey('data') && response['data'] is List) {
