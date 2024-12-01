@@ -1,35 +1,71 @@
 import random
 import json
 import requests
-from faker import Faker
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException
 from amd_api.utils.es_client import get_es_client
+from rest_framework.pagination import PageNumberPagination
 
-fake = Faker()
 
-class LogsAPIView(APIView):
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.exceptions import APIException
+from rest_framework.pagination import PageNumberPagination
+from amd_api.utils.es_client import get_es_client
+
+class LogsAPIView(APIView, PageNumberPagination):
     """
-    API to fetch logs from Elasticsearch.
+    API to fetch logs from Elasticsearch with pagination.
     """
+    page_size = 10  # Default page size
+    page_size_query_param = 'page_size'  # Allow clients to override the page size
+    max_page_size = 100  # Maximum page size
+
     def get(self, request, *args, **kwargs):
         es_client = get_es_client()
         try:
+            # Get pagination parameters
+            page = request.query_params.get('page', 1)  # Default to the first page
+            page_size = self.get_page_size(request)
+
+            # Calculate `from` based on the page and page size
+            from_value = (int(page) - 1) * page_size
+
+            # Refresh Elasticsearch index for near real-time results
+            es_client.indices.refresh(index="winlogbeat-*")
+
+            # Elasticsearch query with pagination and sorting by latest timestamp
             response = es_client.search(
                 index="winlogbeat-*",
                 body={
                     "query": {
                         "match_all": {}
                     },
-                    "size": 100,
-                    "sort": [{"@timestamp": {"order": "desc"}}],
+                    "from": from_value,
+                    "size": page_size,
+                    "sort": [{"@timestamp": {"order": "desc"}}],  # Latest logs on top
                 }
             )
+
+            # Extract logs from response
             logs = [hit['_source'] for hit in response['hits']['hits']]
-            return Response({"status": "success", "data": logs})
+            total_logs = response['hits']['total']['value']  # Total number of logs
+
+            # Build paginated response
+            return Response({
+                "status": "success",
+                "page": int(page),
+                "page_size": page_size,
+                "total_logs": total_logs,
+                "data": logs
+            })
+
         except Exception as e:
-            raise APIException(detail=str(e))
+            raise APIException(detail=f"Error fetching logs: {str(e)}")
+
+
 
 class MachinesAPIView(APIView):
     """
