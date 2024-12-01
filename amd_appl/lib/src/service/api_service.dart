@@ -36,11 +36,12 @@ class ApiService {
   }
 
   /// Fetch logs for a specific machine
-  Future<List<dynamic>> fetchLogs(int machineId) async {
+  Future<List<dynamic>> fetchLogs(String machineId) async {
     try {
-      final response = await getService('/logs/$machineId/');
-      
-      // Ensure the response is in the expected format
+      // Append machineId to the endpoint
+      final response = await getService('/logs/');
+
+      // Validate and process the response
       if (response.containsKey('data') && response['data'] is List) {
         return response['data']; // Return the logs as a list
       } else {
@@ -50,4 +51,5 @@ class ApiService {
       throw Exception('Error fetching logs: $e');
     }
   }
+
 }
