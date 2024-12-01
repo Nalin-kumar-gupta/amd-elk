@@ -58,6 +58,7 @@ services:
       dockerfile: ./django-config/Dockerfile
     image: amd_django
     container_name: amd_django
+    # command: ["./wait-for-it.sh", "amd_elasticsearch:9200", "--", "/start.sh"]
     command: /start.sh
     volumes:
       - .:/app
@@ -65,6 +66,8 @@ services:
       - 8000:8000
     env_file:
       - ./.env/.local/.django
+    networks:
+      - elk
     depends_on:
       - redis
       - elasticsearch
@@ -72,6 +75,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: amd_redis
+    networks:
+      - elk
 
   celery_worker:
     build:
@@ -84,6 +89,8 @@ services:
       - .:/app
     env_file:
       - ./.env/.local/.celery
+    networks:
+      - elk
     depends_on:
       - redis
       - elasticsearch
@@ -99,6 +106,8 @@ services:
       - .:/app
     env_file:
       - ./.env/.local/.beat
+    networks:
+      - elk
     depends_on:
       - redis
       - elasticsearch
@@ -116,6 +125,8 @@ services:
       - ./.env/.local/.flower
     ports:
       - 5557:5555
+    networks:
+      - elk
     depends_on:
       - redis
       - elasticsearch

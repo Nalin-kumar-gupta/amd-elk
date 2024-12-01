@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 
 import environ
+from elasticsearch import Elasticsearch
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -55,6 +56,7 @@ INSTALLED_APPS = (
     "django_celery_results",
     "django_celery_beat",
     "rest_framework_simplejwt",
+    "django_elasticsearch_dsl",
 )
 
 MIDDLEWARE = [
@@ -92,9 +94,16 @@ WSGI_APPLICATION = 'amd_core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'mydatabase',
+    }
+}
+
 ELASTICSEARCH_DSL = {
     'default': {
-        'hosts': 'http://elasticsearch:9200'  # Update with your Elasticsearch host/port
+        'hosts': ['https://elasticsearch:9200'],
     },
 }
 
