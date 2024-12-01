@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:convert';
-import 'package:flutter/services.dart';
 import 'package:amd_appl/src/pages/machine_detail_page.dart';
+import 'package:amd_appl/src/service/api_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -12,20 +11,31 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<dynamic> machines = [];
+  final ApiService _apiService = ApiService();
+  List<String> machines = []; // Change to List<String> as we are getting a list of machine names
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    loadMachines();
+    fetchMachines();
   }
 
-  Future<void> loadMachines() async {
-    final String data =
-        await rootBundle.loadString('assets/Data/machines.json');
-    setState(() {
-      machines = json.decode(data);
-    });
+  /// Polling function to fetch machines periodically
+  void fetchMachines() async {
+    try {
+      final fetchedMachines = await _apiService.fetchMachines();
+      setState(() {
+        machines = fetchedMachines; // Assign the fetched list of machine names
+        isLoading = false;
+      });
+      // Poll every 10 seconds
+      Future.delayed(const Duration(seconds: 10), fetchMachines);
+    } catch (e) {
+      debugPrint('Error fetching machines: $e');
+      // Retry after delay if an error occurs
+      Future.delayed(const Duration(seconds: 10), fetchMachines);
+    }
   }
 
   @override
@@ -48,48 +58,50 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       backgroundColor: Colors.black,
-      body: machines.isEmpty
+      body: isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Colors.teal),
             )
-          : Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: ListView.builder(
-                itemCount: machines.length,
-                itemBuilder: (context, index) {
-                  final machine = machines[index];
-                  return MachineCard(
-                    machineName: machine['name'],
-                    machineStatus: machine['status'], // e.g., "Active", "Inactive"
-                    riskLevel: machine['riskLevel'], // e.g., 45%
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              MachineDetailsPage(machineId: machine['id']),
-                        ),
+          : machines.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No Machines Found',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: ListView.builder(
+                    itemCount: machines.length,
+                    itemBuilder: (context, index) {
+                      final machineName = machines[index]; // Directly access machine name
+                      return MachineCard(
+                        machineName: machineName,
+                        onTap: () {
+                          // You can pass machineName or a relevant machineId to the details page
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  MachineDetailsPage(machineId: machineName), // Pass an identifier like index for now
+                            ),
+                          );
+                        },
                       );
                     },
-                  );
-                },
-              ),
-            ),
+                  ),
+                ),
     );
   }
 }
 
 class MachineCard extends StatelessWidget {
   final String machineName;
-  final String machineStatus;
-  final int riskLevel;
   final VoidCallback onTap;
 
   const MachineCard({
     Key? key,
     required this.machineName,
-    required this.machineStatus,
-    required this.riskLevel,
     required this.onTap,
   }) : super(key: key);
 
@@ -110,7 +122,7 @@ class MachineCard extends StatelessWidget {
               // Machine Icon
               CircleAvatar(
                 radius: 30,
-                backgroundColor: riskLevel > 70 ? Colors.red : Colors.teal,
+                backgroundColor: Colors.teal,
                 child: const Icon(Icons.computer, color: Colors.white, size: 24),
               ),
               const SizedBox(width: 16),
@@ -127,32 +139,11 @@ class MachineCard extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Status: $machineStatus',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey[400],
-                      ),
-                    ),
                   ],
                 ),
               ),
-              // Risk Indicator
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '$riskLevel% Risk',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: riskLevel > 70 ? Colors.red : Colors.greenAccent,
-                    ),
-                  ),
-                  const Icon(Icons.arrow_forward_ios, color: Colors.grey),
-                ],
-              ),
+              // Arrow Icon for navigation
+              const Icon(Icons.arrow_forward_ios, color: Colors.grey),
             ],
           ),
         ),

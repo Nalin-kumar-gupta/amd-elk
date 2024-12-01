@@ -1,0 +1,12 @@
+SECRET_KEY="62qi_zv=2rpwyv6lr6724l+&lb5g*68lb-0^lh8srb+m@hbhbl"
+DEBUG=1
+DJANGO_ALLOWED_HOSTS="*"
+REDIS_URL="redis://redis:6379"
+BROKER_URL="redis://redis:6379/0"
+CELERY_RESULT_BACKEND="redis://redis:6379/0"
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'
+ELASTICSEARCH_HOST='elasticsearch'
+ELASTICSEARCH_PORT='9200'
