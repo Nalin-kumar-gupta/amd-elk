@@ -102,6 +102,7 @@ class LogsAPIView(APIView, PageNumberPagination):
             cleaned_logs = []
             for log in logs:
                 cleaned_log = {
+                    "hostname": log.get("host", {}).get("hostname", "Unknown"),
                     "timestamp": log.get("@timestamp", "N/A"),
                     "user": log.get("winlog", {}).get("user", {}).get("name", "Unknown"),  # Accessing winlog.user.name
                     "process_name": log.get("winlog", {}).get("event_data", {}).get("Image", "Unknown"),
