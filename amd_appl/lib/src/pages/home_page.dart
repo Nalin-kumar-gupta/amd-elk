@@ -12,7 +12,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final ApiService _apiService = ApiService();
-  List<dynamic> machines = [];
+  List<String> machines = []; // Change to List<String> as we are getting a list of machine names
   bool isLoading = true;
 
   @override
@@ -26,7 +26,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final fetchedMachines = await _apiService.fetchMachines();
       setState(() {
-        machines = fetchedMachines;
+        machines = fetchedMachines; // Assign the fetched list of machine names
         isLoading = false;
       });
       // Poll every 10 seconds
@@ -74,17 +74,16 @@ class _HomePageState extends State<HomePage> {
                   child: ListView.builder(
                     itemCount: machines.length,
                     itemBuilder: (context, index) {
-                      final machine = machines[index];
+                      final machineName = machines[index]; // Directly access machine name
                       return MachineCard(
-                        machineName: machine['name'],
-                        machineStatus: machine['status'], // e.g., "Active", "Inactive"
-                        riskLevel: machine['riskLevel'], // e.g., 45%
+                        machineName: machineName,
                         onTap: () {
+                          // You can pass machineName or a relevant machineId to the details page
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  MachineDetailsPage(machineId: machine['id']),
+                                  MachineDetailsPage(machineId: machineName), // Pass an identifier like index for now
                             ),
                           );
                         },
@@ -98,15 +97,11 @@ class _HomePageState extends State<HomePage> {
 
 class MachineCard extends StatelessWidget {
   final String machineName;
-  final String machineStatus;
-  final int riskLevel;
   final VoidCallback onTap;
 
   const MachineCard({
     Key? key,
     required this.machineName,
-    required this.machineStatus,
-    required this.riskLevel,
     required this.onTap,
   }) : super(key: key);
 
@@ -127,7 +122,7 @@ class MachineCard extends StatelessWidget {
               // Machine Icon
               CircleAvatar(
                 radius: 30,
-                backgroundColor: riskLevel > 70 ? Colors.red : Colors.teal,
+                backgroundColor: Colors.teal,
                 child: const Icon(Icons.computer, color: Colors.white, size: 24),
               ),
               const SizedBox(width: 16),
@@ -144,32 +139,11 @@ class MachineCard extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Status: $machineStatus',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey[400],
-                      ),
-                    ),
                   ],
                 ),
               ),
-              // Risk Indicator
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '$riskLevel% Risk',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: riskLevel > 70 ? Colors.red : Colors.greenAccent,
-                    ),
-                  ),
-                  const Icon(Icons.arrow_forward_ios, color: Colors.grey),
-                ],
-              ),
+              // Arrow Icon for navigation
+              const Icon(Icons.arrow_forward_ios, color: Colors.grey),
             ],
           ),
         ),

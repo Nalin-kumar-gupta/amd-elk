@@ -4,7 +4,7 @@ import 'package:flutter/services.dart'; // For loading assets
 import 'package:google_fonts/google_fonts.dart';
 
 class MachineDetailsPage extends StatefulWidget {
-  final int machineId;
+  final String machineId;
 
   const MachineDetailsPage({Key? key, required this.machineId}) : super(key: key);
 
