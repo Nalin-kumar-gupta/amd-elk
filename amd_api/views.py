@@ -135,14 +135,14 @@ class MachinesAPIView(APIView):
     def get(self, request, *args, **kwargs):
         es_client = get_es_client()
         try:
-            # Query to aggregate unique machine names
+            # Query to aggregate unique machine names based on the host.hostname field
             response = es_client.search(
                 index="winlogbeat-*",  # Adjust this index pattern if needed
                 body={
                     "aggs": {
                         "unique_machines": {
                             "terms": {
-                                "field": "machine.name.keyword",  # Ensure this field is mapped correctly
+                                "field": "host.hostname.keyword",  # Ensure this field is mapped correctly
                                 "size": 1000  # Increase the size if needed for more unique machine names
                             }
                         }
@@ -159,5 +159,6 @@ class MachinesAPIView(APIView):
         except Exception as e:
             # Return an error message if there's an exception
             raise APIException(detail=f"Error fetching unique machines: {str(e)}")
+
 
 
