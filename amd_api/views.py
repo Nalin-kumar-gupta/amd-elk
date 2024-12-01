@@ -102,11 +102,11 @@ class LogsAPIView(APIView, PageNumberPagination):
             cleaned_logs = []
             for log in logs:
                 cleaned_log = {
-                    "timestamp": log["@timestamp"],
-                    "user": log["winlog"]["user"]["name"],
-                    "process_name": log["winlog"]["event_data"].get("Image"),
-                    "command_line": log["winlog"]["event_data"].get("CommandLine"),
-                    "description": log["winlog"]["event_data"].get("Description"),
+                    "timestamp": log.get("@timestamp", "N/A"),
+                    "user": log.get("winlog", {}).get("user", {}).get("name", "Unknown"),  # Accessing winlog.user.name
+                    "process_name": log.get("winlog", {}).get("event_data", {}).get("Image", "Unknown"),
+                    "command_line": log.get("winlog", {}).get("event_data", {}).get("CommandLine", "Unknown"),
+                    "description": log.get("winlog", {}).get("event_data", {}).get("Description", "Unknown"),
                     "risk_level": random.choice(["Low", "Medium", "High"])  # Fake risk level
                 }
                 
