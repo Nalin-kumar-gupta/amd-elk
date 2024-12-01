@@ -61,8 +61,8 @@ amd_core/amd_api/*.pyc
 # Docker-specific ignores
 **/docker-compose.override.yml
 **/docker-compose.override.yaml
-**/.env
-**/.env.*
+
+venv
 
 # General OS-specific ignores
 **/.DS_Store
