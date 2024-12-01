@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:convert';
-import 'package:flutter/services.dart';
 import 'package:amd_appl/src/pages/machine_detail_page.dart';
+import 'package:amd_appl/src/service/api_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -12,20 +11,31 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final ApiService _apiService = ApiService();
   List<dynamic> machines = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    loadMachines();
+    fetchMachines();
   }
 
-  Future<void> loadMachines() async {
-    final String data =
-        await rootBundle.loadString('assets/Data/machines.json');
-    setState(() {
-      machines = json.decode(data);
-    });
+  /// Polling function to fetch machines periodically
+  void fetchMachines() async {
+    try {
+      final fetchedMachines = await _apiService.fetchMachines();
+      setState(() {
+        machines = fetchedMachines;
+        isLoading = false;
+      });
+      // Poll every 10 seconds
+      Future.delayed(const Duration(seconds: 10), fetchMachines);
+    } catch (e) {
+      debugPrint('Error fetching machines: $e');
+      // Retry after delay if an error occurs
+      Future.delayed(const Duration(seconds: 10), fetchMachines);
+    }
   }
 
   @override
@@ -48,33 +58,40 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       backgroundColor: Colors.black,
-      body: machines.isEmpty
+      body: isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Colors.teal),
             )
-          : Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: ListView.builder(
-                itemCount: machines.length,
-                itemBuilder: (context, index) {
-                  final machine = machines[index];
-                  return MachineCard(
-                    machineName: machine['name'],
-                    machineStatus: machine['status'], // e.g., "Active", "Inactive"
-                    riskLevel: machine['riskLevel'], // e.g., 45%
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              MachineDetailsPage(machineId: machine['id']),
-                        ),
+          : machines.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No Machines Found',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: ListView.builder(
+                    itemCount: machines.length,
+                    itemBuilder: (context, index) {
+                      final machine = machines[index];
+                      return MachineCard(
+                        machineName: machine['name'],
+                        machineStatus: machine['status'], // e.g., "Active", "Inactive"
+                        riskLevel: machine['riskLevel'], // e.g., 45%
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  MachineDetailsPage(machineId: machine['id']),
+                            ),
+                          );
+                        },
                       );
                     },
-                  );
-                },
-              ),
-            ),
+                  ),
+                ),
     );
   }
 }

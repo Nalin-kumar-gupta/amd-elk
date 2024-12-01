@@ -1,0 +1,80 @@
+# Flutter-specific ignores
+amd_appl/.dart_tool/
+amd_appl/.idea/
+amd_appl/.vscode/
+amd_appl/.packages
+amd_appl/.flutter-plugins
+amd_appl/.flutter-plugins-dependencies
+amd_appl/build/
+amd_appl/pubspec.lock
+
+# iOS-specific files in Flutter project
+amd_appl/ios/Flutter/Flutter.framework
+amd_appl/ios/Flutter/Flutter.podspec
+amd_appl/ios/Flutter/engine/
+amd_appl/ios/.symlinks/
+amd_appl/ios/Pods/
+amd_appl/ios/Runner.xcworkspace/
+amd_appl/ios/DerivedData/
+amd_appl/ios/.generated/
+
+# Android-specific files in Flutter project
+amd_appl/android/.gradle/
+amd_appl/android/app/debug/
+amd_appl/android/app/profile/
+amd_appl/android/app/release/
+amd_appl/android/local.properties
+amd_appl/android/.idea/
+
+# Other generated files
+amd_appl/*.iml
+amd_appl/.metadata
+amd_appl/.android/
+amd_appl/.ios/
+amd_appl/.gradle/
+amd_appl/test-results/
+
+# macOS-specific files
+amd_appl/macos/.DS_Store
+amd_appl/macos/Flutter/ephemeral/
+
+# Windows-specific files
+amd_appl/windows/.DS_Store
+amd_appl/windows/flutter/ephemeral/
+
+# Web-specific files
+amd_appl/web/.firebase/
+amd_appl/web/.generated/
+
+# Django-specific ignores
+amd_core/__pycache__/
+amd_core/*.pyc
+amd_core/db.sqlite3
+amd_core/media/
+amd_core/staticfiles/
+
+# Django app-specific ignores
+amd_core/amd_api/__pycache__/
+amd_core/amd_api/migrations/
+amd_core/amd_api/*.pyc
+
+# Docker-specific ignores
+**/docker-compose.override.yml
+**/docker-compose.override.yaml
+**/.env
+**/.env.*
+
+# General OS-specific ignores
+**/.DS_Store
+**/Thumbs.db
+**/desktop.ini
+
+# Logs
+*.log
+
+# Git
+.git/
+
+# Documentation and config
+docs/build/
+elk-config/
