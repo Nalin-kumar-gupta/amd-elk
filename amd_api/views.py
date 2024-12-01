@@ -62,13 +62,13 @@ from datetime import datetime
 # API View for Logs with Risk Level
 class LogsAPIView(APIView, PageNumberPagination):
     """
-    API to fetch logs from Elasticsearch with pagination and fake risk levels.
+    API to fetch logs from Elasticsearch with pagination and hostname-based filtering.
     """
     page_size = 10  # Default page size
     page_size_query_param = 'page_size'  # Allow clients to override the page size
     max_page_size = 100  # Maximum page size
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, hostname, *args, **kwargs):
         es_client = get_es_client()
         try:
             # Get pagination parameters
@@ -81,12 +81,16 @@ class LogsAPIView(APIView, PageNumberPagination):
             # Refresh Elasticsearch index for near real-time results
             es_client.indices.refresh(index="winlogbeat-*")
 
-            # Elasticsearch query with pagination and sorting by latest timestamp
+            # Elasticsearch query with hostname filtering, pagination, and sorting
             response = es_client.search(
                 index="winlogbeat-*",
                 body={
                     "query": {
-                        "match_all": {}
+                        "bool": {
+                            "must": [
+                                {"match": {"host.hostname": hostname}}
+                            ]
+                        }
                     },
                     "from": from_value,
                     "size": page_size,
@@ -104,13 +108,13 @@ class LogsAPIView(APIView, PageNumberPagination):
                 cleaned_log = {
                     "hostname": log.get("host", {}).get("hostname", "Unknown"),
                     "timestamp": log.get("@timestamp", "N/A"),
-                    "user": log.get("winlog", {}).get("user", {}).get("name", "Unknown"),  # Accessing winlog.user.name
+                    "user": log.get("winlog", {}).get("user", {}).get("name", "Unknown"),
                     "process_name": log.get("winlog", {}).get("event_data", {}).get("Image", "Unknown"),
                     "command_line": log.get("winlog", {}).get("event_data", {}).get("CommandLine", "Unknown"),
                     "description": log.get("winlog", {}).get("event_data", {}).get("Description", "Unknown"),
-                    "risk_level": random.choice(["Low", "Medium", "High"])  # Fake risk level
+                    "risk_level": random.choice(["Low", "Medium", "High"]),  # Fake risk level
                 }
-                
+
                 # Save cleaned logs to a new index pattern (e.g., "sysmon-logs-risk")
                 es_client.index(index="sysmon-logs-risk", body=cleaned_log)
                 cleaned_logs.append(cleaned_log)
@@ -121,7 +125,7 @@ class LogsAPIView(APIView, PageNumberPagination):
                 "page": int(page),
                 "page_size": page_size,
                 "total_logs": total_logs,
-                "data": cleaned_logs
+                "data": cleaned_logs,
             })
 
         except Exception as e:
