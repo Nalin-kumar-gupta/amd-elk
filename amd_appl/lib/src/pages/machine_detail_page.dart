@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:amd_appl/src/service/api_service.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:fl_chart/fl_chart.dart'; // Importing the chart package
 import 'dart:async';
 
 class MachineDetailsPage extends StatefulWidget {
@@ -15,6 +16,11 @@ class MachineDetailsPage extends StatefulWidget {
 class _MachineDetailsPageState extends State<MachineDetailsPage> {
   final ApiService _apiService = ApiService();
   List<dynamic> logs = [];
+  Map<String, int> riskLevelCount = {
+    "Low": 0,
+    "Medium": 0,
+    "High": 0,
+  };
   bool isLoading = false;
   Timer? pollingTimer;
 
@@ -48,6 +54,7 @@ class _MachineDetailsPageState extends State<MachineDetailsPage> {
       final newLogs = await _apiService.fetchLogs(widget.machineId);
       setState(() {
         logs = newLogs; // Update the logs list
+        updateRiskLevelCount(); // Update the risk level counts
       });
     } catch (e) {
       debugPrint('Error fetching logs: $e');
@@ -55,6 +62,16 @@ class _MachineDetailsPageState extends State<MachineDetailsPage> {
       setState(() {
         isLoading = false;
       });
+    }
+  }
+
+  void updateRiskLevelCount() {
+    riskLevelCount = {"Low": 0, "Medium": 0, "High": 0};
+    for (var log in logs) {
+      final riskLevel = log['risk_level'] ?? 'Low';
+      if (riskLevelCount.containsKey(riskLevel)) {
+        riskLevelCount[riskLevel] = riskLevelCount[riskLevel]! + 1;
+      }
     }
   }
 
@@ -114,6 +131,90 @@ class _MachineDetailsPageState extends State<MachineDetailsPage> {
                           ),
                         ),
                       ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Risk Level Graph
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Risk Levels',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF00FF00),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    AspectRatio(
+                      aspectRatio: 1.5,
+                      child: BarChart(
+                        BarChartData(
+                          barGroups: [
+                            BarChartGroupData(
+                              x: 0,
+                              barRods: [
+                                BarChartRodData(
+                                  toY: riskLevelCount["Low"]!.toDouble(),
+                                  color: Colors.green,
+                                ),
+                              ],
+                              showingTooltipIndicators: [0],
+                            ),
+                            BarChartGroupData(
+                              x: 1,
+                              barRods: [
+                                BarChartRodData(
+                                  toY: riskLevelCount["Medium"]!.toDouble(),
+                                  color: Colors.orange,
+                                ),
+                              ],
+                              showingTooltipIndicators: [0],
+                            ),
+                            BarChartGroupData(
+                              x: 2,
+                              barRods: [
+                                BarChartRodData(
+                                  toY: riskLevelCount["High"]!.toDouble(),
+                                  color: Colors.red,
+                                ),
+                              ],
+                              showingTooltipIndicators: [0],
+                            ),
+                          ],
+                          titlesData: FlTitlesData(
+                            leftTitles: AxisTitles(),
+                            rightTitles: AxisTitles(),
+                            topTitles: AxisTitles(),
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, _) {
+                                  switch (value.toInt()) {
+                                    case 0:
+                                      return const Text("Low", style: TextStyle(color: Colors.white));
+                                    case 1:
+                                      return const Text("Medium", style: TextStyle(color: Colors.white));
+                                    case 2:
+                                      return const Text("High", style: TextStyle(color: Colors.white));
+                                  }
+                                  return const SizedBox();
+                                },
+                              ),
+                            ),
+                          ),
+                          borderData: FlBorderData(show: false),
+                        ),
+                      ),
                     ),
                   ],
                 ),
