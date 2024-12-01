@@ -1,39 +1,34 @@
 import random
 import json
-import requests
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException
 from amd_api.utils.es_client import get_es_client
 from rest_framework.pagination import PageNumberPagination
 
-class LogsAPIView(APIView):
-    """
-    API to fetch logs from Elasticsearch with pagination and navigation support.
-    """
-    class CustomPagination(PageNumberPagination):
-        page_size = 10  # Default page size
-        page_size_query_param = 'page_size'  # Allow clients to override page size
-        max_page_size = 100  # Maximum page size
 
-    pagination_class = CustomPagination
+class LogsAPIView(APIView, PageNumberPagination):
+    """
+    API to fetch logs from Elasticsearch with pagination.
+    """
+    page_size = 10  # Default page size
+    page_size_query_param = 'page_size'  # Allow clients to override the page size
+    max_page_size = 100  # Maximum page size
 
     def get(self, request, *args, **kwargs):
         es_client = get_es_client()
-        paginator = self.pagination_class()
-
         try:
             # Get pagination parameters
-            page = request.query_params.get(paginator.page_query_param, 1)
-            page_size = paginator.get_page_size(request)
+            page = request.query_params.get('page', 1)  # Default to the first page
+            page_size = self.get_page_size(request)
 
-            # Calculate `from` value for Elasticsearch
+            # Calculate `from` based on the page and page size
             from_value = (int(page) - 1) * page_size
 
-            # Refresh Elasticsearch index for near real-time updates
+            # Refresh Elasticsearch index for near real-time results
             es_client.indices.refresh(index="winlogbeat-*")
 
-            # Elasticsearch query with sorting by latest timestamp
+            # Elasticsearch query with pagination and sorting by latest timestamp
             response = es_client.search(
                 index="winlogbeat-*",
                 body={
@@ -46,22 +41,21 @@ class LogsAPIView(APIView):
                 }
             )
 
-            # Extract logs from the response
+            # Extract logs from response
             logs = [hit['_source'] for hit in response['hits']['hits']]
-            total_logs = response['hits']['total']['value']
+            total_logs = response['hits']['total']['value']  # Total number of logs
 
-            # Generate pagination links
-            paginated_data = paginator.paginate_queryset(logs, request)
-
-            # Build response
-            return paginator.get_paginated_response({
+            # Build paginated response
+            return Response({
+                "status": "success",
+                "page": int(page),
+                "page_size": page_size,
                 "total_logs": total_logs,
-                "logs": paginated_data
+                "data": logs
             })
 
         except Exception as e:
             raise APIException(detail=f"Error fetching logs: {str(e)}")
-
 
 
 
