@@ -65,7 +65,7 @@ class LogsAPIView(APIView, PageNumberPagination):
     API to fetch logs from Elasticsearch with pagination and hostname-based filtering.
     """
     page_size = 10  # Default page size
-    # page_size_query_param = 'page_size'  # Allow clients to override the page size
+    page_size_query_param = 'page_size'  # Allow clients to override the page size
     max_page_size = 100  # Maximum page size
 
     def get(self, request, hostname, *args, **kwargs):
@@ -102,11 +102,9 @@ class LogsAPIView(APIView, PageNumberPagination):
             logs = [hit['_source'] for hit in response['hits']['hits']]
             total_logs = response['hits']['total']['value']  # Total number of logs
 
-            # Clean up the logs and calculate risk level
+            # Clean up the logs and add a fake risk level
             cleaned_logs = []
             for log in logs:
-                risk_percentage = self.calculate_risk(log)
-
                 cleaned_log = {
                     "hostname": log.get("host", {}).get("hostname", "Unknown"),
                     "timestamp": log.get("@timestamp", "N/A"),
@@ -114,7 +112,7 @@ class LogsAPIView(APIView, PageNumberPagination):
                     "process_name": log.get("winlog", {}).get("event_data", {}).get("Image", "Unknown"),
                     "command_line": log.get("winlog", {}).get("event_data", {}).get("CommandLine", "Unknown"),
                     "description": log.get("winlog", {}).get("event_data", {}).get("Description", "Unknown"),
-                    "risk_percentage": risk_percentage,  # Risk percentage calculated
+                    "risk_level": random.choice(["Low", "Medium", "High"]),  # Fake risk level
                 }
 
                 # Save cleaned logs to a new index pattern (e.g., "sysmon-logs-risk")
@@ -132,27 +130,6 @@ class LogsAPIView(APIView, PageNumberPagination):
 
         except Exception as e:
             raise APIException(detail=f"Error fetching logs: {str(e)}")
-
-    def calculate_risk(self, log):
-        """
-        Calculates the risk score based on various log features with a random factor.
-
-        Args:
-            log (dict): The log entry to analyze.
-
-        Returns:
-            int: The calculated risk score.
-        """
-
-        risk_score = 0
-
-        # Add a random factor to the risk score, between 3 and 35
-        random_factor = random.randint(3, 35)
-        risk_score += random_factor
-
-        # Normalize risk score to a percentage
-        risk_percentage = min(risk_score, 100)
-        return risk_percentage
 
 
 class MachinesAPIView(APIView):
