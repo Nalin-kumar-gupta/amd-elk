@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:amd_appl/src/service/api_service.dart';
+import 'package:AMD/src/service/api_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart'; // Importing the chart package
 import 'dart:async';
