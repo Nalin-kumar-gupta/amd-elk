@@ -109,10 +109,15 @@ class LogsAPIView(APIView, PageNumberPagination):
                     "hostname": log.get("host", {}).get("hostname", "Unknown"),
                     "timestamp": log.get("@timestamp", "N/A"),
                     "user": log.get("winlog", {}).get("user", {}).get("name", "Unknown"),
-                    "process_name": log.get("winlog", {}).get("event_data", {}).get("Image", "Unknown"),
+                    "process_name": (
+                        log.get("winlog", {}).get("event_data", {}).get("Image") or
+                        log.get("winlog", {}).get("event_data", {}).get("ProcessName") or
+                        next(iter(log.get("winlog", {}).get("event_data", {}).values()), "Unknown")
+                    ),
                     "command_line": log.get("winlog", {}).get("event_data", {}).get("CommandLine", "Unknown"),
                     "description": log.get("winlog", {}).get("event_data", {}).get("Description", "Unknown"),
-                    "risk_level": random.choice(["Low", "Medium", "High"]),  # Fake risk level
+                    "action": log.get("event", {}).get("action", "unknown"),
+                    "risk_level": random.choice(["Low", "Medium", "High"]),  # Random risk level
                 }
 
                 # Save cleaned logs to a new index pattern (e.g., "sysmon-logs-risk")
