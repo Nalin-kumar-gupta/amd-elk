@@ -269,12 +269,24 @@ class _MachineDetailsPageState extends State<MachineDetailsPage> {
                                         color: Colors.white,
                                       ),
                                     ),
-                                    subtitle: Text(
-                                      'Risk Level: ${log['risk_level'] ?? 'N/A'} - ${log['timestamp'] ?? ''}',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        color: Colors.grey[400],
-                                      ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Risk Level: ${log['risk_level'] ?? 'N/A'}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            color: Colors.grey[400],
+                                          ),
+                                        ),
+                                        Text(
+                                          'Event Action: ${log['action'] ?? 'N/A'}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            color: Colors.grey[400],
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     children: [
                                       ListTile(
