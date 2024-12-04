@@ -68,6 +68,9 @@ class LogsAPIView(APIView, PageNumberPagination):
     page_size_query_param = 'page_size'  # Allow clients to override the page size
     max_page_size = 100  # Maximum page size
 
+    def _get_risk_level(self, log):
+        return  random.choice(["Low", "Medium", "High"])
+
     def get(self, request, hostname, *args, **kwargs):
         es_client = get_es_client()
         try:
@@ -117,7 +120,7 @@ class LogsAPIView(APIView, PageNumberPagination):
                     "command_line": log.get("winlog", {}).get("event_data", {}).get("CommandLine", "Unknown"),
                     "description": log.get("winlog", {}).get("event_data", {}).get("Description", "Unknown"),
                     "action": log.get("event", {}).get("action", "unknown"),
-                    "risk_level": random.choice(["Low", "Medium", "High"]),  # Random risk level
+                    "risk_level": self._get_risk_level(log),  # Random risk level
                 }
 
                 # Save cleaned logs to a new index pattern (e.g., "sysmon-logs-risk")
