@@ -69,7 +69,48 @@ class LogsAPIView(APIView, PageNumberPagination):
     max_page_size = 100  # Maximum page size
 
     def _get_risk_level(self, log):
-        return  random.choice(["Low", "Medium", "High"])
+        # {
+        #     "hostname": "DELL-42",
+        #     "timestamp": "2024-12-04T07:28:32.480Z",
+        #     "user": "SYSTEM",
+        #     "process_name": "C:\\Users\\vboxuser\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        #     "command_line": "\"C:\\Users\\vboxuser\\AppData\\Local\\Programs\\Python\\Python313\\python.exe\" .\\runner.py",
+        #     "description": "Python",
+        #     "action": "CreateRemoteThread detected (rule: CreateRemoteThread)",
+        #     "risk_level": "Medium"
+        # },
+        # {
+        #     "hostname": "DELL-42",
+        #     "timestamp": "2024-12-04T07:28:29.481Z",
+        #     "user": "SYSTEM",
+        #     "process_name": "C:\\Users\\vboxuser\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        #     "command_line": "Unknown",
+        #     "description": "Unknown",
+        #     "action": "CreateRemoteThread detected (rule: CreateRemoteThread)",
+        #     "risk_level": "Low"
+        # },
+
+        # hostname = log.get("host", {}).get("hostname", "Unknown")
+        # timestamp = log.get("@timestamp", "N/A")
+        # user = log.get("winlog", {}).get("user", {}).get("name", "Unknown"), 
+        process_name = (
+                        log.get("winlog", {}).get("event_data", {}).get("Image") or
+                        log.get("winlog", {}).get("event_data", {}).get("ProcessName") or
+                        next(iter(log.get("winlog", {}).get("event_data", {}).values()), "Unknown")
+                    ) 
+        # command_line = log.get("winlog", {}).get("event_data", {}).get("CommandLine", "Unknown"), 
+        # description = log.get("winlog", {}).get("event_data", {}).get("Description", "Unknown"),
+        # action = log.get("event", {}).get("action", "unknown"),
+        choices = ["Low", "Medium"] 
+        weights = [1, 0]
+        if process_name.endswith("python.exe"):
+            return "High"
+        elif process_name.endswith("msedge.exe"):
+            weights = [0.5, 0.5]
+        else:
+            weights = [0.8, 0.2]  
+
+        return random.choices(choices, weights=weights, k=1)[0] 
 
     def get(self, request, hostname, *args, **kwargs):
         es_client = get_es_client()
