@@ -5,6 +5,7 @@ from amd_api.utils.es_client import get_es_client
 from rest_framework.pagination import PageNumberPagination
 import random
 from datetime import datetime
+import re
 
 
 class RawLogsAPIView(APIView, PageNumberPagination):
@@ -103,7 +104,7 @@ class LogsAPIView(APIView, PageNumberPagination):
         # action = log.get("event", {}).get("action", "unknown"),
         choices = ["Low", "Medium"] 
         weights = [1, 0]
-        if process_name.endswith("python.exe"):
+        if re.search(r"python.*\.exe$", process_name):
             return "High"
         elif process_name.endswith("msedge.exe"):
             weights = [0.5, 0.5]
