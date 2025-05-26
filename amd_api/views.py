@@ -66,12 +66,48 @@ class LogsAPIView(APIView, PageNumberPagination):
     """
     API to fetch logs from Elasticsearch with pagination and hostname-based filtering.
     """
-    page_size = 10  # Default page size
-    page_size_query_param = 'page_size'  # Allow clients to override the page size
-    max_page_size = 100  # Maximum page size
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
     def _send_alert(self, log):
-        print("hello")
+        try:
+            msg = EmailMessage()
+            msg['Subject'] = '[ALERT] High-Risk Activity Detected on Host: {}'.format(log.get('hostname', 'Unknown'))
+            msg['From'] = 'nalinkumargupta.bt21cse@pec.edu.in'
+            msg['To'] = 'nalingupta71@gmail.com'  # Can be a list
+
+            msg.set_content(f"""
+Dear Security Administrator,
+
+A high-risk event has been detected by the automated malware detection system. Below are the details of the suspicious activity:
+
+─────────────────────────────────────────────
+📌 Hostname     : {log.get('hostname')}
+🕒 Timestamp    : {log.get('timestamp')}
+👤 User         : {log.get('user')}
+🧩 Process Name : {log.get('process_name')}
+💻 Command Line : {log.get('command_line')}
+📝 Description  : {log.get('description')}
+⚠️ Action       : {log.get('action')}
+🔒 Risk Level   : {log.get('risk_level')}
+─────────────────────────────────────────────
+
+Immediate attention is recommended to assess the potential threat and take appropriate mitigation measures.
+
+Sincerely,  
+Automated Malware Detection System
+""")
+
+            # SMTP setup (no need for settings.py)
+            server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls()
+            server.login('nalinkumargupta.bt21cse@pec.edu.in', 'uzom nqrl ygef ykdz')  # App password only
+            server.send_message(msg)
+            server.quit()
+            print("✅ Email alert sent.")
+        except Exception as e:
+            print(f"❌ Email sending failed, but continuing: {e}")
 
     def _get_risk_level(self, log):
         # {
@@ -168,10 +204,12 @@ class LogsAPIView(APIView, PageNumberPagination):
                     "action": log.get("event", {}).get("action", "unknown"),
                     "risk_level": self._get_risk_level(log),  # Random risk level
                 }
+                if cleaned_log["risk_level"] == "High":
+                    self._send_alert(cleaned_log)
 
-                # Save cleaned logs to a new index pattern (e.g., "sysmon-logs-risk")
                 es_client.index(index="sysmon-logs-risk", body=cleaned_log)
                 cleaned_logs.append(cleaned_log)
+
 
             # Build paginated response
             return Response({
