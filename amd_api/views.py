@@ -102,7 +102,7 @@ Automated Malware Detection System
             # SMTP setup (no need for settings.py)
             server = smtplib.SMTP('smtp.gmail.com', 587)
             server.starttls()
-            server.login('your_email@gmail.com', 'your_16_char_app_password')  # App password only
+            server.login('nalinkumargupta.bt21cse@pec.edu.in', 'uzom nqrl ygef ykdz')  # App password only
             server.send_message(msg)
             server.quit()
             print("✅ Email alert sent.")
