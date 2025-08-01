@@ -116,6 +116,7 @@ Step 2: Install and Configure Winlogbeat
    .. code-block:: bash
 
      Start-Service winlogbeat
+     ./winlogbeat.exe -c ./winlogbeat.yml
 
 7. **Verify the Winlogbeat Service**
    - Ensure Winlogbeat is running by executing:

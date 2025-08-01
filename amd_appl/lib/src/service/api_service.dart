@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String _IP = '144.126.254.135'; 
+  static const String _IP = '143.110.179.136'; 
   static const String _baseUrl = 'http://${_IP}:8000/api'; 
 
   /// Generic GET service

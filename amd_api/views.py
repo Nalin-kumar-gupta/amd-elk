@@ -5,57 +5,59 @@ from amd_api.utils.es_client import get_es_client
 from rest_framework.pagination import PageNumberPagination
 import random
 from datetime import datetime
+import re
+import smtplib
+from email.message import EmailMessage
 
+class RawLogsAPIView(APIView, PageNumberPagination):
+    """
+    API to fetch logs from Elasticsearch with pagination.
+    """
+    page_size = 50  # Default page size
+    page_size_query_param = 'page_size'  # Allow clients to override the page size
+    max_page_size = 100  # Maximum page size
 
-# class LogsAPIView(APIView, PageNumberPagination):
-#     """
-#     API to fetch logs from Elasticsearch with pagination.
-#     """
-#     page_size = 10  # Default page size
-#     page_size_query_param = 'page_size'  # Allow clients to override the page size
-#     max_page_size = 100  # Maximum page size
+    def get(self, request, *args, **kwargs):
+        es_client = get_es_client()
+        try:
+            # Get pagination parameters
+            page = request.query_params.get('page', 1)  # Default to the first page
+            page_size = self.get_page_size(request)
 
-#     def get(self, request, *args, **kwargs):
-#         es_client = get_es_client()
-#         try:
-#             # Get pagination parameters
-#             page = request.query_params.get('page', 1)  # Default to the first page
-#             page_size = self.get_page_size(request)
+            # Calculate `from` based on the page and page size
+            from_value = (int(page) - 1) * page_size
 
-#             # Calculate `from` based on the page and page size
-#             from_value = (int(page) - 1) * page_size
+            # Refresh Elasticsearch index for near real-time results
+            es_client.indices.refresh(index="winlogbeat-*")
 
-#             # Refresh Elasticsearch index for near real-time results
-#             es_client.indices.refresh(index="winlogbeat-*")
+            # Elasticsearch query with pagination and sorting by latest timestamp
+            response = es_client.search(
+                index="winlogbeat-*",
+                body={
+                    "query": {
+                        "match_all": {}
+                    },
+                    "from": from_value,
+                    "size": page_size,
+                    "sort": [{"@timestamp": {"order": "desc"}}],  # Latest logs on top
+                }
+            )
 
-#             # Elasticsearch query with pagination and sorting by latest timestamp
-#             response = es_client.search(
-#                 index="winlogbeat-*",
-#                 body={
-#                     "query": {
-#                         "match_all": {}
-#                     },
-#                     "from": from_value,
-#                     "size": page_size,
-#                     "sort": [{"@timestamp": {"order": "desc"}}],  # Latest logs on top
-#                 }
-#             )
+            # Extract logs from response
+            logs = [hit['_source'] for hit in response['hits']['hits']]
+            total_logs = response['hits']['total']['value']  # Total number of logs
 
-#             # Extract logs from response
-#             logs = [hit['_source'] for hit in response['hits']['hits']]
-#             total_logs = response['hits']['total']['value']  # Total number of logs
+            # Build paginated response
+            return Response({
+                "status": "success",
+                "page": int(page),
+                "page_size": page_size,
+                "total_logs": total_logs,
+                "data": logs
+            })
 
-#             # Build paginated response
-#             return Response({
-#                 "status": "success",
-#                 "page": int(page),
-#                 "page_size": page_size,
-#                 "total_logs": total_logs,
-#                 "data": logs
-#             })
-
-#         except Exception as e:
-#             raise APIException(detail=f"Error fetching logs: {str(e)}")
+        except Exception as e:
+            raise APIException(detail=f"Error fetching logs: {str(e)}")
 
 
 
@@ -67,6 +69,53 @@ class LogsAPIView(APIView, PageNumberPagination):
     page_size = 10  # Default page size
     page_size_query_param = 'page_size'  # Allow clients to override the page size
     max_page_size = 100  # Maximum page size
+
+    def _send_alert(self, log):
+        print("hello")
+
+    def _get_risk_level(self, log):
+        # {
+        #     "hostname": "DELL-42",
+        #     "timestamp": "2024-12-04T07:28:32.480Z",
+        #     "user": "SYSTEM",
+        #     "process_name": "C:\\Users\\vboxuser\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        #     "command_line": "\"C:\\Users\\vboxuser\\AppData\\Local\\Programs\\Python\\Python313\\python.exe\" .\\runner.py",
+        #     "description": "Python",
+        #     "action": "CreateRemoteThread detected (rule: CreateRemoteThread)",
+        #     "risk_level": "Medium"
+        # },
+        # {
+        #     "hostname": "DELL-42",
+        #     "timestamp": "2024-12-04T07:28:29.481Z",
+        #     "user": "SYSTEM",
+        #     "process_name": "C:\\Users\\vboxuser\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        #     "command_line": "Unknown",
+        #     "description": "Unknown",
+        #     "action": "CreateRemoteThread detected (rule: CreateRemoteThread)",
+        #     "risk_level": "Low"
+        # },
+
+        # hostname = log.get("host", {}).get("hostname", "Unknown")
+        # timestamp = log.get("@timestamp", "N/A")
+        # user = log.get("winlog", {}).get("user", {}).get("name", "Unknown"), 
+        process_name = (
+                        log.get("winlog", {}).get("event_data", {}).get("Image") or
+                        log.get("winlog", {}).get("event_data", {}).get("ProcessName") or
+                        next(iter(log.get("winlog", {}).get("event_data", {}).values()), "Unknown")
+                    ) 
+        # command_line = log.get("winlog", {}).get("event_data", {}).get("CommandLine", "Unknown"), 
+        # description = log.get("winlog", {}).get("event_data", {}).get("Description", "Unknown"),
+        # action = log.get("event", {}).get("action", "unknown"),
+        choices = ["Low", "Medium"] 
+        weights = [1, 0]
+        if re.search(r"python.*\.exe$", process_name):
+            return "High"
+        elif process_name.endswith("msedge.exe"):
+            weights = [0.5, 0.5]
+        else:
+            weights = [0.8, 0.2]  
+
+        return random.choices(choices, weights=weights, k=1)[0] 
 
     def get(self, request, hostname, *args, **kwargs):
         es_client = get_es_client()
@@ -109,10 +158,15 @@ class LogsAPIView(APIView, PageNumberPagination):
                     "hostname": log.get("host", {}).get("hostname", "Unknown"),
                     "timestamp": log.get("@timestamp", "N/A"),
                     "user": log.get("winlog", {}).get("user", {}).get("name", "Unknown"),
-                    "process_name": log.get("winlog", {}).get("event_data", {}).get("Image", "Unknown"),
+                    "process_name": (
+                        log.get("winlog", {}).get("event_data", {}).get("Image") or
+                        log.get("winlog", {}).get("event_data", {}).get("ProcessName") or
+                        next(iter(log.get("winlog", {}).get("event_data", {}).values()), "Unknown")
+                    ),
                     "command_line": log.get("winlog", {}).get("event_data", {}).get("CommandLine", "Unknown"),
                     "description": log.get("winlog", {}).get("event_data", {}).get("Description", "Unknown"),
-                    "risk_level": random.choice(["Low", "Medium", "High"]),  # Fake risk level
+                    "action": log.get("event", {}).get("action", "unknown"),
+                    "risk_level": self._get_risk_level(log),  # Random risk level
                 }
 
                 # Save cleaned logs to a new index pattern (e.g., "sysmon-logs-risk")

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:amd_appl/src/pages/splash_screen.dart';
-import 'package:amd_appl/src/pages/home_page.dart';
+import 'package:AMD/src/pages/splash_screen.dart';
+import 'package:AMD/src/pages/home_page.dart';
 // import 'package:healthaxis_mob/src/widgets/custom_route.dart';
 // Uncomment or ensure the following imports exist
 // import 'package:healthaxis_mob/src/pages/detail_page.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:amd_appl/src/config/route.dart';
+import 'package:AMD/src/config/route.dart';
 
 void main() {
   runApp(MyApp());
